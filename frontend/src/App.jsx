@@ -12,6 +12,7 @@ import Cart from './pages/customer/Cart'
 import MyOrders from './pages/customer/MyOrders'
 import Login from './pages/customer/Login'
 import Register from './pages/customer/Register'
+import Profile from './pages/customer/Profile'
 
 import Dashboard from './pages/admin/Dashboard'
 import ManageProducts from './pages/admin/ManageProducts'
@@ -39,6 +40,14 @@ function App() {
               element={
                 <RequireAuth>
                   <MyOrders />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <RequireAuth>
+                  <Profile />
                 </RequireAuth>
               }
             />

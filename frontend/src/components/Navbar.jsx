@@ -20,6 +20,7 @@ export default function Navbar() {
         <Link to="/products">Thiết bị</Link>
         <Link to="/cart">Giỏ hàng</Link>
         {isAuthenticated && <Link to="/orders">Đơn của tôi</Link>}
+        {isAuthenticated && <Link to="/profile">Hồ sơ</Link>}
       </nav>
 
       <div className="navbar-auth">
