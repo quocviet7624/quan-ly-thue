@@ -27,3 +27,7 @@ export async function getOrderById(id) {
   const { data } = await api.get(`/orders/${id}`)
   return data
 }
+export async function deleteOrder(id) {
+  const { data } = await api.delete(`/orders/${id}`)
+  return data
+}

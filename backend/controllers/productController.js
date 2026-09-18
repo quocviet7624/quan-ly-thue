@@ -1,8 +1,21 @@
 const pool = require('../config/db')
 
+function parseImages(row) {
+  if (!row) return row
+  let images = []
+  try {
+    images = row.images ? JSON.parse(row.images) : []
+  } catch {
+    images = []
+  }
+  return { ...row, images }
+}
+
 async function getProducts(req, res) {
-  const { category_id, search } = req.query
-  let sql = 'SELECT * FROM products WHERE status = "active"'
+  const { category_id, search, all } = req.query
+  // "all" = true -> dùng cho trang quản trị (admin), lấy cả sản phẩm discontinued
+  // không có "all" -> dùng cho trang khách hàng, chỉ lấy sản phẩm active
+  let sql = all ? 'SELECT * FROM products WHERE 1=1' : 'SELECT * FROM products WHERE status = "active"'
   const params = []
 
   if (category_id) {
@@ -17,7 +30,7 @@ async function getProducts(req, res) {
 
   try {
     const [rows] = await pool.query(sql, params)
-    res.json(rows)
+    res.json(rows.map(parseImages))
   } catch (err) {
     console.error(err)
     res.status(500).json({ message: 'Lỗi server' })
@@ -28,7 +41,7 @@ async function getProductById(req, res) {
   try {
     const [rows] = await pool.query('SELECT * FROM products WHERE id = ?', [req.params.id])
     if (rows.length === 0) return res.status(404).json({ message: 'Không tìm thấy sản phẩm' })
-    res.json(rows[0])
+    res.json(parseImages(rows[0]))
   } catch (err) {
     console.error(err)
     res.status(500).json({ message: 'Lỗi server' })
@@ -40,21 +53,33 @@ async function createProduct(req, res) {
     category_id,
     name,
     description,
-    image_url,
     brand,
     rental_price_per_day,
     deposit_amount,
+    images, // mảng URL ảnh, ví dụ ['/uploads/products/abc.jpg', ...]
   } = req.body
 
   if (!category_id || !name || !rental_price_per_day) {
     return res.status(400).json({ message: 'Thiếu thông tin bắt buộc' })
   }
 
+  const imageList = Array.isArray(images) ? images : []
+  const coverImage = imageList[0] || null
+
   try {
     const [result] = await pool.query(
-      `INSERT INTO products (category_id, name, description, image_url, brand, rental_price_per_day, deposit_amount)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [category_id, name, description || null, image_url || null, brand || null, rental_price_per_day, deposit_amount || 0]
+      `INSERT INTO products (category_id, name, description, image_url, images, brand, rental_price_per_day, deposit_amount)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        category_id,
+        name,
+        description || null,
+        coverImage,
+        JSON.stringify(imageList),
+        brand || null,
+        rental_price_per_day,
+        deposit_amount || 0,
+      ]
     )
     res.status(201).json({ id: result.insertId })
   } catch (err) {
@@ -69,19 +94,38 @@ async function updateProduct(req, res) {
     category_id,
     name,
     description,
-    image_url,
     brand,
     rental_price_per_day,
     deposit_amount,
     status,
+    images,
   } = req.body
 
+  const imageList = Array.isArray(images) ? images : []
+  const coverImage = imageList[0] || null
+
   try {
-    await pool.query(
-      `UPDATE products SET category_id=?, name=?, description=?, image_url=?, brand=?,
+    const [result] = await pool.query(
+      `UPDATE products SET category_id=?, name=?, description=?, image_url=?, images=?, brand=?,
        rental_price_per_day=?, deposit_amount=?, status=? WHERE id=?`,
-      [category_id, name, description, image_url, brand, rental_price_per_day, deposit_amount, status || 'active', id]
+      [
+        category_id,
+        name,
+        description,
+        coverImage,
+        JSON.stringify(imageList),
+        brand,
+        rental_price_per_day,
+        deposit_amount,
+        status || 'active',
+        id,
+      ]
     )
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Không tìm thấy sản phẩm để cập nhật' })
+    }
+
     res.json({ message: 'Cập nhật thành công' })
   } catch (err) {
     console.error(err)
@@ -99,4 +143,20 @@ async function deleteProduct(req, res) {
   }
 }
 
-module.exports = { getProducts, getProductById, createProduct, updateProduct, deleteProduct }
+function uploadImages(req, res) {
+  if (!req.files || req.files.length === 0) {
+    return res.status(400).json({ message: 'Không có file nào được tải lên' })
+  }
+
+  const urls = req.files.map((file) => `/uploads/products/${file.filename}`)
+  res.json({ urls })
+}
+
+module.exports = {
+  getProducts,
+  getProductById,
+  createProduct,
+  updateProduct,
+  deleteProduct,
+  uploadImages,
+}

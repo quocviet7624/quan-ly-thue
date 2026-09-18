@@ -1,10 +1,16 @@
 import { Link } from 'react-router-dom'
+import { SERVER_ORIGIN } from '../services/api'
+
+function resolveImageUrl(url) {
+  if (!url) return null
+  return url.startsWith('http') ? url : `${SERVER_ORIGIN}${url}`
+}
 
 export default function ProductCard({ product }) {
   return (
     <div className="product-card">
       <img
-        src={product.image_url || 'https://placehold.co/300x200?text=No+Image'}
+        src={resolveImageUrl(product.image_url) || 'https://placehold.co/300x200?text=No+Image'}
         alt={product.name}
       />
       <div className="product-card-body">

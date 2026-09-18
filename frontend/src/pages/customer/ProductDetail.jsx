@@ -1,20 +1,115 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { getProductById } from '../../services/productService'
+import { getReviewsByProduct, createReview } from '../../services/reviewService'
+import { useAuth } from '../../context/AuthContext'
+import { SERVER_ORIGIN } from '../../services/api'
+
+function resolveImageUrl(url) {
+  if (!url) return null
+  return url.startsWith('http') ? url : `${SERVER_ORIGIN}${url}`
+}
+
+function StarDisplay({ value, size = 16 }) {
+  return (
+    <span className="star-display" style={{ fontSize: size }}>
+      {[1, 2, 3, 4, 5].map((n) => (
+        <span key={n} className={n <= Math.round(value) ? 'star-filled' : 'star-empty'}>
+          ★
+        </span>
+      ))}
+    </span>
+  )
+}
+
+function StarInput({ value, onChange }) {
+  const [hover, setHover] = useState(0)
+  return (
+    <span className="star-input">
+      {[1, 2, 3, 4, 5].map((n) => (
+        <span
+          key={n}
+          className={n <= (hover || value) ? 'star-filled' : 'star-empty'}
+          onMouseEnter={() => setHover(n)}
+          onMouseLeave={() => setHover(0)}
+          onClick={() => onChange(n)}
+        >
+          ★
+        </span>
+      ))}
+    </span>
+  )
+}
 
 export default function ProductDetail() {
   const { id } = useParams()
+  const { isAuthenticated } = useAuth()
+
   const [product, setProduct] = useState(null)
+  const [activeImage, setActiveImage] = useState(null)
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
   const [quantity, setQuantity] = useState(1)
   const [error, setError] = useState(null)
 
+  const [reviews, setReviews] = useState([])
+  const [reviewSummary, setReviewSummary] = useState({ total: 0, average: '0.0' })
+  const [loadingReviews, setLoadingReviews] = useState(true)
+
+  const [ratingInput, setRatingInput] = useState(0)
+  const [commentInput, setCommentInput] = useState('')
+  const [submittingReview, setSubmittingReview] = useState(false)
+  const [reviewMessage, setReviewMessage] = useState(null)
+  const [reviewError, setReviewError] = useState(null)
+
   useEffect(() => {
     getProductById(id)
-      .then(setProduct)
+      .then((data) => {
+        setProduct(data)
+        const firstImage = data.images?.[0] || data.image_url
+        setActiveImage(firstImage)
+      })
       .catch(() => setError('Không tải được sản phẩm.'))
   }, [id])
+
+  function loadReviews() {
+    setLoadingReviews(true)
+    getReviewsByProduct(id)
+      .then((data) => {
+        setReviews(data.reviews)
+        setReviewSummary({ total: data.total, average: data.average })
+      })
+      .catch(() => {})
+      .finally(() => setLoadingReviews(false))
+  }
+
+  useEffect(() => {
+    loadReviews()
+  }, [id])
+
+  function calcDays() {
+    if (!startDate || !endDate) return 0
+    const s = new Date(startDate)
+    const e = new Date(endDate)
+    return Math.max(1, Math.ceil((e - s) / (1000 * 60 * 60 * 24)))
+  }
+
+  function goToPrevImage() {
+    if (!product?.images?.length) return
+    const idx = product.images.indexOf(activeImage)
+    const prevIdx = idx <= 0 ? product.images.length - 1 : idx - 1
+    setActiveImage(product.images[prevIdx])
+  }
+
+  function goToNextImage() {
+    if (!product?.images?.length) return
+    const idx = product.images.indexOf(activeImage)
+    const nextIdx = idx === product.images.length - 1 ? 0 : idx + 1
+    setActiveImage(product.images[nextIdx])
+  }
+
+  const days = calcDays()
+  const estimatedTotal = product ? product.rental_price_per_day * quantity * (days || 1) : 0
 
   function handleAddToCart() {
     if (!startDate || !endDate) {
@@ -27,41 +122,182 @@ export default function ProductDetail() {
     alert('Đã thêm vào giỏ hàng!')
   }
 
+  async function handleSubmitReview(e) {
+    e.preventDefault()
+    setReviewError(null)
+    setReviewMessage(null)
+
+    if (ratingInput === 0) {
+      setReviewError('Vui lòng chọn số sao đánh giá.')
+      return
+    }
+
+    setSubmittingReview(true)
+    try {
+      await createReview(id, { rating: ratingInput, comment: commentInput })
+      setReviewMessage('Cảm ơn bạn đã đánh giá!')
+      setRatingInput(0)
+      setCommentInput('')
+      loadReviews()
+    } catch (err) {
+      setReviewError(err.response?.data?.message || 'Gửi đánh giá thất bại.')
+    } finally {
+      setSubmittingReview(false)
+    }
+  }
+
   if (error) return <p className="error-text">{error}</p>
   if (!product) return <p>Đang tải...</p>
 
-  return (
-    <div className="product-detail">
-      <img src={product.image_url || 'https://placehold.co/500x350?text=No+Image'} alt={product.name} />
-      <div className="product-detail-info">
-        <h1>{product.name}</h1>
-        <p>{product.description}</p>
-        <p className="product-price">
-          {Number(product.rental_price_per_day).toLocaleString('vi-VN')} đ / ngày
-        </p>
-        <p>Tiền cọc: {Number(product.deposit_amount).toLocaleString('vi-VN')} đ</p>
+  const hasMultipleImages = product.images && product.images.length > 1
 
-        <div className="rental-form">
-          <label>
-            Ngày thuê
-            <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-          </label>
-          <label>
-            Ngày trả
-            <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
-          </label>
-          <label>
-            Số lượng
-            <input
-              type="number"
-              min="1"
-              value={quantity}
-              onChange={(e) => setQuantity(e.target.value)}
+  return (
+    <div className="product-detail-page">
+      {/* Khối thông tin sản phẩm */}
+      <div className="product-detail-card">
+        <div className="product-detail-image">
+          <img
+            src={resolveImageUrl(activeImage) || 'https://placehold.co/500x400?text=No+Image'}
+            alt={product.name}
+          />
+
+          {hasMultipleImages && (
+            <>
+              <button
+                type="button"
+                className="detail-image-nav detail-image-nav-prev"
+                onClick={goToPrevImage}
+                aria-label="Ảnh trước"
+              >
+                ‹
+              </button>
+              <button
+                type="button"
+                className="detail-image-nav detail-image-nav-next"
+                onClick={goToNextImage}
+                aria-label="Ảnh sau"
+              >
+                ›
+              </button>
+            </>
+          )}
+
+          {hasMultipleImages && (
+            <div className="thumbnail-row">
+              {product.images.map((img, i) => (
+                <img
+                  key={i}
+                  src={resolveImageUrl(img)}
+                  alt={`Ảnh ${i + 1}`}
+                  className={`thumbnail-item ${activeImage === img ? 'thumbnail-active' : ''}`}
+                  onClick={() => setActiveImage(img)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="product-detail-info">
+          <h1>{product.name}</h1>
+
+          <div className="product-rating-summary">
+            <StarDisplay value={Number(reviewSummary.average)} size={18} />
+            <span className="rating-average-text">{reviewSummary.average}</span>
+            <span className="rating-count-text">({reviewSummary.total} đánh giá)</span>
+          </div>
+
+          <p className="product-detail-desc">{product.description}</p>
+
+          <div className="product-price-box">
+            <p className="product-price-big">
+              {Number(product.rental_price_per_day).toLocaleString('vi-VN')} đ
+              <span> / ngày</span>
+            </p>
+            <p className="product-deposit-text">
+              Tiền cọc: {Number(product.deposit_amount).toLocaleString('vi-VN')} đ
+            </p>
+          </div>
+
+          <div className="rental-form">
+            <div className="rental-form-row">
+              <label>
+                Ngày thuê
+                <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+              </label>
+              <label>
+                Ngày trả
+                <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+              </label>
+            </div>
+            <label>
+              Số lượng
+              <input
+                type="number"
+                min="1"
+                value={quantity}
+                onChange={(e) => setQuantity(e.target.value)}
+              />
+            </label>
+
+            {days > 0 && (
+              <p className="rental-estimate">
+                Tạm tính: <strong>{estimatedTotal.toLocaleString('vi-VN')} đ</strong> cho {days} ngày
+              </p>
+            )}
+
+            <button onClick={handleAddToCart} className="btn-primary btn-add-to-cart-detail">
+              🛒 Thêm vào giỏ
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Khối đánh giá & nhận xét */}
+      <div className="reviews-section">
+        <h2>Đánh giá từ khách hàng</h2>
+
+        {isAuthenticated ? (
+          <form className="review-form" onSubmit={handleSubmitReview}>
+            <p className="review-form-label">Đánh giá của bạn:</p>
+            <StarInput value={ratingInput} onChange={setRatingInput} />
+
+            <textarea
+              placeholder="Chia sẻ trải nghiệm của bạn về thiết bị này..."
+              value={commentInput}
+              onChange={(e) => setCommentInput(e.target.value)}
+              rows={3}
             />
-          </label>
-          <button onClick={handleAddToCart} className="btn-primary">
-            Thêm vào giỏ
-          </button>
+
+            {reviewError && <p className="error-text">{reviewError}</p>}
+            {reviewMessage && <p className="success-text">{reviewMessage}</p>}
+
+            <button type="submit" className="btn-primary" disabled={submittingReview}>
+              {submittingReview ? 'Đang gửi...' : 'Gửi đánh giá'}
+            </button>
+          </form>
+        ) : (
+          <p className="note-text">Vui lòng đăng nhập để gửi đánh giá cho sản phẩm này.</p>
+        )}
+
+        <div className="review-list">
+          {loadingReviews && <p>Đang tải đánh giá...</p>}
+
+          {!loadingReviews && reviews.length === 0 && (
+            <p className="note-text">Chưa có đánh giá nào cho sản phẩm này.</p>
+          )}
+
+          {reviews.map((r) => (
+            <div className="review-item" key={r.id}>
+              <div className="review-item-header">
+                <strong>{r.full_name}</strong>
+                <StarDisplay value={r.rating} size={14} />
+                <span className="review-date">
+                  {new Date(r.created_at).toLocaleDateString('vi-VN')}
+                </span>
+              </div>
+              {r.comment && <p className="review-comment">{r.comment}</p>}
+            </div>
+          ))}
         </div>
       </div>
     </div>

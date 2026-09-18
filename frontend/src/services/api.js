@@ -3,6 +3,9 @@ import axios from 'axios'
 // Đổi URL này khi backend Express deploy ở địa chỉ khác
 const BASE_URL = 'http://localhost:5000/api'
 
+// Dùng để ghép với đường dẫn ảnh trả về từ server, VD: '/uploads/products/xxx.jpg'
+export const SERVER_ORIGIN = BASE_URL.replace('/api', '')
+
 const api = axios.create({
   baseURL: BASE_URL,
   headers: {

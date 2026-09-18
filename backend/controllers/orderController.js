@@ -144,5 +144,14 @@ async function updateOrderStatus(req, res) {
     res.status(500).json({ message: 'Lỗi server' })
   }
 }
+async function deleteOrder(req, res) {
+  try {
+    await pool.query('DELETE FROM rental_orders WHERE id = ?', [req.params.id])
+    res.json({ message: 'Xóa đơn thuê thành công' })
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ message: 'Không thể xóa đơn thuê này' })
+  }
+}
 
-module.exports = { createOrder, getMyOrders, getAllOrders, getOrderById, updateOrderStatus }
+module.exports = { createOrder, getMyOrders, getAllOrders, getOrderById, updateOrderStatus, deleteOrder }

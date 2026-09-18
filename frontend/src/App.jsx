@@ -13,6 +13,7 @@ import MyOrders from './pages/customer/MyOrders'
 import Login from './pages/customer/Login'
 import Register from './pages/customer/Register'
 import Profile from './pages/customer/Profile'
+import AboutUs from './pages/customer/AboutUs'
 
 import Dashboard from './pages/admin/Dashboard'
 import ManageProducts from './pages/admin/ManageProducts'
@@ -31,6 +32,7 @@ function App() {
           <Route element={<CustomerLayout />}>
             <Route path="/" element={<Home />} />
             <Route path="/products" element={<Products />} />
+            <Route path="/gioi-thieu" element={<AboutUs />} />
             <Route path="/products/:id" element={<ProductDetail />} />
             <Route path="/cart" element={<Cart />} />
             <Route path="/login" element={<Login />} />
