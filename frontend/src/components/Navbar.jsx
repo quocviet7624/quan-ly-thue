@@ -26,10 +26,10 @@ export default function Navbar() {
       {/* Hàng trên: logo + hotline + social */}
       <div className="header-top">
         <Link to="/" className="header-logo">
-          <span className="logo-icon">🏕️</span>
+          <span className="logo-icon">📦</span>
           <div className="logo-text">
-            <span className="logo-title">Dã Ngoại Rental</span>
-            <span className="logo-subtitle">CHUYÊN THIẾT BỊ, PHỤ KIỆN DÃ NGOẠI</span>
+            <span className="logo-title">Cho Thuê Đa Năng</span>
+            <span className="logo-subtitle">NỀN TẢNG CHO THUÊ ĐA DANH MỤC</span>
           </div>
         </Link>
 
@@ -53,7 +53,7 @@ export default function Navbar() {
       <nav className="header-nav">
         <div className="header-nav-links">
           <Link to="/">Trang chủ</Link>
-          <Link to="/products">Thiết bị</Link>
+          <Link to="/products">Sản phẩm</Link>
           <Link to="/gioi-thieu">Giới thiệu</Link>
           {isAuthenticated && <Link to="/orders">Đơn của tôi</Link>}
           {isAuthenticated && <Link to="/profile">Hồ sơ</Link>}
@@ -92,7 +92,7 @@ export default function Navbar() {
         <form className="header-search-dropdown" onSubmit={handleSearchSubmit}>
           <input
             type="text"
-            placeholder="Tìm kiếm thiết bị..."
+            placeholder="Tìm kiếm sản phẩm..."
             value={searchValue}
             onChange={(e) => setSearchValue(e.target.value)}
             autoFocus

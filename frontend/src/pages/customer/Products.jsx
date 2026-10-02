@@ -70,7 +70,7 @@ export default function Products() {
       <div className="products-header">
         <h1>Danh sách thiết bị</h1>
         <p className="products-subtitle">
-          Đầy đủ lều trại, túi ngủ, bếp gas, đèn chiếu sáng, balo... cho chuyến đi của bạn
+          Đa dạng thiết bị cho mọi nhu cầu - thuê đúng thứ bạn cần, đúng lúc bạn cần
         </p>
       </div>
 
@@ -148,7 +148,7 @@ export default function Products() {
             </div>
           ) : (
             <div className="products-empty-state">
-              <span className="empty-icon">🏕️</span>
+              <span className="empty-icon">📦</span>
               <h3>Không tìm thấy thiết bị nào</h3>
               <p>Thử đổi từ khóa tìm kiếm hoặc chọn danh mục khác xem sao.</p>
               {hasActiveFilters && (

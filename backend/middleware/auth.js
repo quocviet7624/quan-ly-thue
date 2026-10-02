@@ -17,11 +17,28 @@ function verifyToken(req, res, next) {
   }
 }
 
+// Chỉ Admin được truy cập - dùng cho: quản lý tài khoản/phân quyền, quản lý danh mục, xóa đơn, thống kê doanh thu
 function requireAdmin(req, res, next) {
-  if (req.user.role !== 'admin' && req.user.role !== 'staff') {
-    return res.status(403).json({ message: 'Không có quyền truy cập' })
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ message: 'Chỉ quản trị viên mới có quyền thực hiện thao tác này' })
   }
   next()
 }
 
-module.exports = { verifyToken, requireAdmin }
+// Nhân viên hoặc Admin đều được - dùng cho: quản lý sản phẩm, xử lý đơn, tạo đơn tại quầy
+function requireStaff(req, res, next) {
+  if (req.user.role !== 'staff' && req.user.role !== 'admin') {
+    return res.status(403).json({ message: 'Bạn không có quyền thực hiện thao tác này' })
+  }
+  next()
+}
+
+// Cho phép vào khu vực quản trị nói chung (cả admin lẫn staff), phân quyền chi tiết hơn do requireAdmin/requireStaff đảm nhiệm ở từng route
+function requireAdminArea(req, res, next) {
+  if (req.user.role !== 'staff' && req.user.role !== 'admin') {
+    return res.status(403).json({ message: 'Bạn không có quyền truy cập khu vực quản trị' })
+  }
+  next()
+}
+
+module.exports = { verifyToken, requireAdmin, requireStaff, requireAdminArea }

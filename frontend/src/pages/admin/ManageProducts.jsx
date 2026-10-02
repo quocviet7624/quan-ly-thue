@@ -9,6 +9,9 @@ import {
 import { getCategories } from '../../services/categoryService'
 import { SERVER_ORIGIN } from '../../services/api'
 
+// Ngưỡng "sắp hết hàng" — admin có thể chỉnh số này theo ý muốn.
+const LOW_STOCK_THRESHOLD = 3
+
 const emptyForm = {
   category_id: '',
   name: '',
@@ -16,6 +19,7 @@ const emptyForm = {
   brand: '',
   rental_price_per_day: '',
   deposit_amount: '',
+  stock_quantity: '',
   status: 'active',
   images: [], // mảng URL ảnh đã upload (đường dẫn tương đối từ server)
 }
@@ -23,6 +27,12 @@ const emptyForm = {
 function resolveImageUrl(url) {
   if (!url) return null
   return url.startsWith('http') ? url : `${SERVER_ORIGIN}${url}`
+}
+
+function getStockBadge(stock) {
+  if (stock <= 0) return { label: 'Hết hàng', className: 'stock-badge-out' }
+  if (stock <= LOW_STOCK_THRESHOLD) return { label: `Sắp hết (${stock})`, className: 'stock-badge-low' }
+  return { label: `Còn ${stock}`, className: 'stock-badge-in' }
 }
 
 export default function ManageProducts() {
@@ -39,8 +49,6 @@ export default function ManageProducts() {
 
   function loadProducts() {
     setLoading(true)
-    // "all: true" để admin thấy cả sản phẩm đã ngừng cho thuê (discontinued),
-    // không chỉ sản phẩm active như trang khách hàng.
     getProducts({ all: true })
       .then(setProducts)
       .catch(() => setProducts([]))
@@ -51,6 +59,11 @@ export default function ManageProducts() {
     loadProducts()
     getCategories().then(setCategories).catch(() => {})
   }, [])
+
+  const outOfStockProducts = products.filter((p) => Number(p.stock_quantity) <= 0)
+  const lowStockProducts = products.filter(
+    (p) => Number(p.stock_quantity) > 0 && Number(p.stock_quantity) <= LOW_STOCK_THRESHOLD
+  )
 
   function handleChange(e) {
     const { name, value } = e.target
@@ -73,6 +86,7 @@ export default function ManageProducts() {
       brand: product.brand || '',
       rental_price_per_day: product.rental_price_per_day,
       deposit_amount: product.deposit_amount,
+      stock_quantity: product.stock_quantity,
       status: product.status,
       images: Array.isArray(product.images) ? product.images : [],
     })
@@ -100,7 +114,7 @@ export default function ManageProducts() {
       setFormError(err.response?.data?.message || 'Tải ảnh lên thất bại.')
     } finally {
       setUploading(false)
-      e.target.value = '' // reset input để chọn lại cùng file nếu cần
+      e.target.value = ''
     }
   }
 
@@ -125,6 +139,7 @@ export default function ManageProducts() {
         ...form,
         rental_price_per_day: Number(form.rental_price_per_day),
         deposit_amount: Number(form.deposit_amount) || 0,
+        stock_quantity: Number(form.stock_quantity) || 0,
       }
 
       if (editingId) {
@@ -136,7 +151,6 @@ export default function ManageProducts() {
       closeModal()
       loadProducts()
     } catch (err) {
-      // In lỗi ra console để dễ debug khi cần (status code, message backend trả về...)
       console.error('Lưu sản phẩm thất bại:', err.response?.status, err.response?.data)
       setFormError(err.response?.data?.message || 'Có lỗi xảy ra, vui lòng thử lại.')
     } finally {
@@ -163,6 +177,23 @@ export default function ManageProducts() {
         </button>
       </div>
 
+      {(outOfStockProducts.length > 0 || lowStockProducts.length > 0) && (
+        <div className="stock-alert-box">
+          {outOfStockProducts.length > 0 && (
+            <p className="stock-alert-line stock-alert-out">
+              ⚠️ {outOfStockProducts.length} sản phẩm đã <strong>hết hàng</strong>:{' '}
+              {outOfStockProducts.map((p) => p.name).join(', ')}
+            </p>
+          )}
+          {lowStockProducts.length > 0 && (
+            <p className="stock-alert-line stock-alert-low">
+              🔶 {lowStockProducts.length} sản phẩm <strong>sắp hết hàng</strong> (≤ {LOW_STOCK_THRESHOLD}):{' '}
+              {lowStockProducts.map((p) => `${p.name} (còn ${p.stock_quantity})`).join(', ')}
+            </p>
+          )}
+        </div>
+      )}
+
       {loading ? (
         <p>Đang tải...</p>
       ) : (
@@ -174,39 +205,47 @@ export default function ManageProducts() {
               <th>Tên sản phẩm</th>
               <th>Giá/ngày</th>
               <th>Tiền cọc</th>
+              <th>Tồn kho</th>
               <th>Trạng thái</th>
               <th></th>
             </tr>
           </thead>
           <tbody>
-            {products.map((p) => (
-              <tr key={p.id}>
-                <td>
-                  <img
-                    src={
-                      resolveImageUrl(p.images?.[0] || p.image_url) ||
-                      'https://placehold.co/50x50?text=No+Img'
-                    }
-                    alt={p.name}
-                    className="admin-table-thumb"
-                  />
-                </td>
-                <td>{p.id}</td>
-                <td>{p.name}</td>
-                <td>{Number(p.rental_price_per_day).toLocaleString('vi-VN')} đ</td>
-                <td>{Number(p.deposit_amount).toLocaleString('vi-VN')} đ</td>
-                <td>
-                  <span className={`status-badge status-${p.status}`}>{p.status}</span>
-                </td>
-                <td>
-                  <button onClick={() => openEditModal(p)}>Sửa</button>
-                  <button onClick={() => handleDelete(p.id)}>Xóa</button>
-                </td>
-              </tr>
-            ))}
+            {products.map((p) => {
+              const stock = Number(p.stock_quantity)
+              const badge = getStockBadge(stock)
+              return (
+                <tr key={p.id}>
+                  <td>
+                    <img
+                      src={
+                        resolveImageUrl(p.images?.[0] || p.image_url) ||
+                        'https://placehold.co/50x50?text=No+Img'
+                      }
+                      alt={p.name}
+                      className="admin-table-thumb"
+                    />
+                  </td>
+                  <td>{p.id}</td>
+                  <td>{p.name}</td>
+                  <td>{Number(p.rental_price_per_day).toLocaleString('vi-VN')} đ</td>
+                  <td>{Number(p.deposit_amount).toLocaleString('vi-VN')} đ</td>
+                  <td>
+                    <span className={`stock-badge ${badge.className}`}>{badge.label}</span>
+                  </td>
+                  <td>
+                    <span className={`status-badge status-${p.status}`}>{p.status}</span>
+                  </td>
+                  <td>
+                    <button onClick={() => openEditModal(p)}>Sửa</button>
+                    <button onClick={() => handleDelete(p.id)}>Xóa</button>
+                  </td>
+                </tr>
+              )
+            })}
             {products.length === 0 && (
               <tr>
-                <td colSpan="7">Chưa có sản phẩm nào.</td>
+                <td colSpan="8">Chưa có sản phẩm nào.</td>
               </tr>
             )}
           </tbody>
@@ -313,6 +352,18 @@ export default function ManageProducts() {
                   />
                 </label>
               </div>
+
+              <label>
+                Số lượng tồn kho *
+                <input
+                  type="number"
+                  name="stock_quantity"
+                  value={form.stock_quantity}
+                  onChange={handleChange}
+                  min="0"
+                  required
+                />
+              </label>
 
               {editingId && (
                 <label>

@@ -5,6 +5,11 @@ export async function getUsers() {
   return data
 }
 
+export async function updateUserRole(id, role) {
+  const { data } = await api.patch(`/users/${id}/role`, { role })
+  return data
+}
+
 export async function updateUserStatus(id, status) {
   const { data } = await api.patch(`/users/${id}/status`, { status })
   return data

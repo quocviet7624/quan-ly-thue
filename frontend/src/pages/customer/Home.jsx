@@ -6,6 +6,7 @@ import { getRecentReviews } from '../../services/reviewService'
 import { getOverviewStats } from '../../services/statsService'
 import ImageCarousel from '../../components/ImageCarousel'
 
+// Icon theo từ khóa danh mục - mở rộng để phù hợp mọi loại hàng, không riêng dã ngoại
 const categoryIcons = {
   lều: '⛺',
   'túi ngủ': '🛏️',
@@ -16,6 +17,14 @@ const categoryIcons = {
   ghế: '🪑',
   loa: '🔊',
   bạt: '⛱️',
+  điện: '🔌',
+  camera: '📷',
+  nội: '🛋️',
+  trang: '👔',
+  thể: '🏀',
+  sách: '📚',
+  nhạc: '🎸',
+  công: '🛠️',
 }
 
 function getIconForCategory(name) {
@@ -25,10 +34,10 @@ function getIconForCategory(name) {
 }
 
 const criteriaItems = [
-  { icon: '🎒', title: 'Thiết Bị Đa Dạng', quote: 'Đầy đủ lều, túi ngủ, bếp, đèn, balo... sạch sẽ, kiểm tra kỹ trước khi giao' },
-  { icon: '🪑', title: 'Phụ Kiện Đi Kèm', quote: 'Bàn ghế, đèn chiếu sáng, dụng cụ nấu ăn... đầy đủ cho mọi quy mô chuyến đi' },
-  { icon: '📍', title: 'Giao Nhận Tận Nơi', quote: 'Giao và thu hồi thiết bị đúng hẹn, đúng địa điểm bạn yêu cầu' },
-  { icon: '👍', title: 'Chất Lượng & Giá Rẻ', quote: 'Đồ thuê chất lượng, giá cả hợp lý, minh bạch cho mọi chuyến đi' },
+  { icon: '📦', title: 'Đa Dạng Danh Mục', quote: 'Từ đồ dùng hằng ngày đến thiết bị chuyên dụng, đăng gì cũng cho thuê được' },
+  { icon: '✅', title: 'Kiểm Định Chất Lượng', quote: 'Sản phẩm được kiểm tra kỹ trước khi giao, đảm bảo hoạt động tốt' },
+  { icon: '📍', title: 'Giao Nhận Tận Nơi', quote: 'Giao và thu hồi đúng hẹn, đúng địa điểm bạn yêu cầu' },
+  { icon: '👍', title: 'Giá Cả Minh Bạch', quote: 'Giá thuê rõ ràng theo ngày, không phát sinh chi phí ẩn' },
 ]
 
 const galleryPhotos = [
@@ -41,7 +50,7 @@ const galleryPhotos = [
 const perks = [
   { icon: '🏷️', text: 'Chương trình giảm giá thường xuyên' },
   { icon: '🚚', text: 'Freeship 5km cho hóa đơn trên 500k' },
-  { icon: '💬', text: 'Tư vấn thiết bị phù hợp & hỗ trợ 24/7' },
+  { icon: '💬', text: 'Tư vấn sản phẩm phù hợp & hỗ trợ 24/7' },
 ]
 
 function StarRow({ value }) {
@@ -102,12 +111,12 @@ export default function Home() {
         }}
       >
         <div className="full-bleed-inner">
-          <p className="welcome-eyebrow">Dịch vụ cho thuê thiết bị, phụ kiện dã ngoại</p>
+          <p className="welcome-eyebrow">Nền tảng cho thuê đồ dùng đa danh mục</p>
           <h1 className="welcome-title">
-            Chào mừng bạn đến với <span className="brand-highlight">DÃ NGOẠI RENTAL</span>
+            Chào mừng bạn đến với <span className="brand-highlight">CHO THUÊ ĐA NĂNG</span>
           </h1>
           <Link to="/products" className="hero-cta-btn">
-            Khám phá thiết bị ngay →
+            Khám phá sản phẩm ngay →
           </Link>
         </div>
       </section>
@@ -115,7 +124,7 @@ export default function Home() {
       {/* Thanh phụ đề + tiêu chí lớn */}
       <section className="tagline-section full-bleed">
         <div className="full-bleed-inner">
-          <p className="tagline-small">Dịch vụ cho thuê thiết bị, phụ kiện dã ngoại</p>
+          <p className="tagline-small">Cái gì cho thuê được, chúng tôi đều có</p>
           <h2 className="tagline-heading">
             HÃY ĐỂ CHÚNG TÔI ĐỒNG HÀNH CÙNG BẠN VỚI TIÊU CHÍ
           </h2>
@@ -140,12 +149,12 @@ export default function Home() {
       {/* Vì sao chọn chúng tôi - số liệu thật */}
       <section className="stats-section full-bleed">
         <div className="full-bleed-inner">
-          <h2 className="stats-title">Vì Sao Chọn Dã Ngoại Rental?</h2>
+          <h2 className="stats-title">Vì Sao Chọn Cho Thuê Đa Năng?</h2>
           <div className="stats-grid">
             <div className="stats-item">
               <span className="stats-icon">🧰</span>
               <span className="stats-number">{stats ? stats.productCount : '--'}+</span>
-              <span className="stats-label">Thiết bị sẵn sàng cho thuê</span>
+              <span className="stats-label">Sản phẩm sẵn sàng cho thuê</span>
             </div>
             <div className="stats-item">
               <span className="stats-icon">✅</span>
@@ -160,7 +169,7 @@ export default function Home() {
             <div className="stats-item">
               <span className="stats-icon">🗂️</span>
               <span className="stats-number">{stats ? stats.categoryCount : '--'}</span>
-              <span className="stats-label">Danh mục thiết bị</span>
+              <span className="stats-label">Danh mục sản phẩm</span>
             </div>
           </div>
         </div>
@@ -169,7 +178,7 @@ export default function Home() {
       {/* Ảnh thực tế khách hàng */}
       <section className="gallery-section full-bleed">
         <div className="full-bleed-inner">
-          <h2 className="gallery-title">Những Hình Ảnh Thực Tế Khách Hàng Sử Dụng Thiết Bị</h2>
+          <h2 className="gallery-title">Những Hình Ảnh Thực Tế Khách Hàng Sử Dụng Sản Phẩm</h2>
           <div className="gallery-carousel">
             <button className="carousel-arrow carousel-arrow-left" onClick={prevPhoto}>
               ‹
@@ -213,7 +222,7 @@ export default function Home() {
                       {new Date(r.created_at).toLocaleDateString('vi-VN')}
                     </p>
                   </div>
-                  <span className="review-verified-badge" title="Đã thuê thiết bị">
+                  <span className="review-verified-badge" title="Đã thuê sản phẩm">
                     ✓
                   </span>
                 </div>
@@ -230,7 +239,7 @@ export default function Home() {
       <section className="perks-section full-bleed">
         <div className="full-bleed-inner">
           <div className="perks-star">★</div>
-          <h2 className="perks-title">ƯU ĐÃI KHI THUÊ THIẾT BỊ TẠI SHOP</h2>
+          <h2 className="perks-title">ƯU ĐÃI KHI THUÊ TẠI CỬA HÀNG</h2>
           <div className="perks-row">
             {perks.map((p) => (
               <div className="perk-item" key={p.text}>
@@ -241,34 +250,34 @@ export default function Home() {
           </div>
 
           <div className="policy-block">
-            <h3 className="policy-heading">Chính sách thuê thiết bị</h3>
+            <h3 className="policy-heading">Chính sách thuê sản phẩm</h3>
 
             <p className="policy-subheading">1. Thời gian thuê</p>
             <ul className="policy-list">
-              <li>Thời gian thuê tính từ lúc nhận thiết bị đến lúc trả, tối đa 24h/lượt.</li>
-              <li>Nếu đi xa, có thể báo trước để hỗ trợ nhận sớm/trả trễ (tối đa 36h).</li>
+              <li>Thời gian thuê tính từ lúc nhận sản phẩm đến lúc trả, tối đa 24h/lượt.</li>
+              <li>Nếu có nhu cầu đặc biệt, có thể báo trước để hỗ trợ nhận sớm/trả trễ (tối đa 36h).</li>
               <li>Thuê thêm ngày thứ 2, 3, 4... tính giá 50%/ngày trên hóa đơn ngày 1.</li>
             </ul>
 
             <p className="policy-subheading">2. Cọc đồ và thanh toán</p>
             <ul className="policy-list">
-              <li>Khi nhận đồ, cần đặt cọc bằng CMND/CCCD hoặc thẻ sinh viên (thông tin được bảo mật).</li>
+              <li>Khi nhận sản phẩm, cần đặt cọc bằng CMND/CCCD hoặc thẻ sinh viên (thông tin được bảo mật).</li>
               <li>Nếu không có giấy tờ, đặt cọc x4 giá trị hóa đơn thuê.</li>
-              <li>Thanh toán đầy đủ trước khi nhận thiết bị.</li>
+              <li>Thanh toán đầy đủ trước khi nhận sản phẩm.</li>
               <li>Đơn đặt trước không cần cọc tiền (trừ ngày lễ), có thể hủy trước 1 ngày.</li>
             </ul>
 
             <p className="policy-subheading">3. Chính sách bồi hoàn</p>
             <ul className="policy-list">
               <li>
-                Thiết bị bị mất, hỏng nặng không thể sửa chữa: khách bồi thường 80% giá trị sản phẩm
+                Sản phẩm bị mất, hỏng nặng không thể sửa chữa: khách bồi thường 80% giá trị sản phẩm
                 (theo giá niêm yết trên hệ thống).
               </li>
             </ul>
 
             <p className="policy-note">
-              💡 Lưu ý: nên chọn thiết bị lớn hơn nhu cầu thực tế một chút để có chỗ để đồ cá nhân,
-              balo, dụng cụ đi kèm thoải mái hơn.
+              💡 Lưu ý: kiểm tra kỹ tình trạng sản phẩm khi nhận và khi trả để tránh phát sinh tranh chấp
+              ngoài ý muốn.
             </p>
           </div>
         </div>
@@ -278,7 +287,7 @@ export default function Home() {
       <section className="contact-banner full-bleed">
         <div className="full-bleed-inner">
           <p className="contact-banner-text">
-            💬 Mọi vấn đề liên quan đến thiết bị thuê & cách sử dụng, liên hệ ngay cho chúng tôi:
+            💬 Mọi vấn đề liên quan đến sản phẩm thuê & cách sử dụng, liên hệ ngay cho chúng tôi:
           </p>
           <div className="contact-banner-buttons">
             <a href="https://zalo.me/0852192629" className="contact-btn">
@@ -294,12 +303,12 @@ export default function Home() {
       {/* Khu sản phẩm cho thuê */}
       <section className="products-section-home full-bleed">
         <div className="full-bleed-inner">
-          <h2 className="products-section-title">Dã Ngoại Rental - Dịch Vụ Cho Thuê Thiết Bị</h2>
-          <h3 className="products-section-subtitle">* THIẾT BỊ CHO THUÊ *</h3>
+          <h2 className="products-section-title">Cho Thuê Đa Năng - Nền Tảng Cho Thuê Trực Tuyến</h2>
+          <h3 className="products-section-subtitle">* SẢN PHẨM CHO THUÊ *</h3>
 
           <div className="category-pills">
             <button className="pill pill-active" onClick={() => goToCategory('')}>
-              🗂️ Tất cả thiết bị
+              🗂️ Tất cả sản phẩm
             </button>
             {categories.map((c) => (
               <button className="pill" key={c.id} onClick={() => goToCategory(c.id)}>
@@ -312,7 +321,7 @@ export default function Home() {
 
           {!loadingFeatured && featured.length === 0 && (
             <p className="note-text-light">
-              Chưa có thiết bị nào, hãy thêm sản phẩm trong trang quản trị.
+              Chưa có sản phẩm nào, hãy thêm sản phẩm trong trang quản trị.
             </p>
           )}
 
@@ -339,10 +348,10 @@ export default function Home() {
       {/* CTA cuối trang */}
       <section className="cta-banner full-bleed">
         <div className="full-bleed-inner">
-          <h2>Sẵn sàng cho chuyến đi tiếp theo?</h2>
-          <p>Đặt thuê ngay hôm nay, giao nhận nhanh chóng và tiện lợi.</p>
+          <h2>Cần thuê gì cũng có, đặt ngay hôm nay!</h2>
+          <p>Đặt thuê nhanh chóng, giao nhận tận nơi, giá cả minh bạch.</p>
           <Link to="/products" className="btn-primary">
-            Khám phá thiết bị
+            Khám phá sản phẩm
           </Link>
         </div>
       </section>

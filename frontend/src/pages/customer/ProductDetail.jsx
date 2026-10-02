@@ -10,6 +10,13 @@ function resolveImageUrl(url) {
   return url.startsWith('http') ? url : `${SERVER_ORIGIN}${url}`
 }
 
+function getTodayStr() {
+  const d = new Date()
+  const offset = d.getTimezoneOffset()
+  const local = new Date(d.getTime() - offset * 60 * 1000)
+  return local.toISOString().split('T')[0]
+}
+
 function StarDisplay({ value, size = 16 }) {
   return (
     <span className="star-display" style={{ fontSize: size }}>
@@ -62,6 +69,8 @@ export default function ProductDetail() {
   const [reviewMessage, setReviewMessage] = useState(null)
   const [reviewError, setReviewError] = useState(null)
 
+  const todayStr = getTodayStr()
+
   useEffect(() => {
     getProductById(id)
       .then((data) => {
@@ -110,10 +119,43 @@ export default function ProductDetail() {
 
   const days = calcDays()
   const estimatedTotal = product ? product.rental_price_per_day * quantity * (days || 1) : 0
+  const stock = product ? Number(product.stock_quantity) : 0
+  const isOutOfStock = product && stock <= 0
+
+  function handleStartDateChange(e) {
+    const value = e.target.value
+    setStartDate(value)
+    if (endDate && value && endDate < value) {
+      setEndDate('')
+    }
+  }
+
+  function handleQuantityChange(e) {
+    let value = Number(e.target.value) || 1
+    if (value < 1) value = 1
+    if (stock > 0 && value > stock) value = stock
+    setQuantity(value)
+  }
 
   function handleAddToCart() {
+    if (isOutOfStock) {
+      alert('Sản phẩm hiện đã hết hàng.')
+      return
+    }
     if (!startDate || !endDate) {
       alert('Vui lòng chọn ngày thuê và ngày trả')
+      return
+    }
+    if (startDate < todayStr) {
+      alert('Ngày thuê không được là ngày trong quá khứ')
+      return
+    }
+    if (endDate < startDate) {
+      alert('Ngày trả phải sau hoặc bằng ngày thuê')
+      return
+    }
+    if (quantity > stock) {
+      alert(`Chỉ còn ${stock} sản phẩm trong kho.`)
       return
     }
     const cart = JSON.parse(localStorage.getItem('cart') || '[]')
@@ -208,6 +250,12 @@ export default function ProductDetail() {
 
           <p className="product-detail-desc">{product.description}</p>
 
+          {isOutOfStock ? (
+            <span className="stock-badge stock-badge-out">Hết hàng</span>
+          ) : (
+            <span className="stock-badge stock-badge-in">Còn {stock} sản phẩm</span>
+          )}
+
           <div className="product-price-box">
             <p className="product-price-big">
               {Number(product.rental_price_per_day).toLocaleString('vi-VN')} đ
@@ -222,31 +270,49 @@ export default function ProductDetail() {
             <div className="rental-form-row">
               <label>
                 Ngày thuê
-                <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+                <input
+                  type="date"
+                  value={startDate}
+                  min={todayStr}
+                  onChange={handleStartDateChange}
+                  disabled={isOutOfStock}
+                />
               </label>
               <label>
                 Ngày trả
-                <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+                <input
+                  type="date"
+                  value={endDate}
+                  min={startDate || todayStr}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  disabled={isOutOfStock}
+                />
               </label>
             </div>
             <label>
-              Số lượng
+              Số lượng {!isOutOfStock && <span className="stock-hint">(tối đa {stock})</span>}
               <input
                 type="number"
                 min="1"
+                max={stock || 1}
                 value={quantity}
-                onChange={(e) => setQuantity(e.target.value)}
+                onChange={handleQuantityChange}
+                disabled={isOutOfStock}
               />
             </label>
 
-            {days > 0 && (
+            {days > 0 && !isOutOfStock && (
               <p className="rental-estimate">
                 Tạm tính: <strong>{estimatedTotal.toLocaleString('vi-VN')} đ</strong> cho {days} ngày
               </p>
             )}
 
-            <button onClick={handleAddToCart} className="btn-primary btn-add-to-cart-detail">
-              🛒 Thêm vào giỏ
+            <button
+              onClick={handleAddToCart}
+              className="btn-primary btn-add-to-cart-detail"
+              disabled={isOutOfStock}
+            >
+              {isOutOfStock ? 'Hết hàng' : '🛒 Thêm vào giỏ'}
             </button>
           </div>
         </div>

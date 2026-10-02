@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
-import { RequireAuth, RequireAdmin } from './components/ProtectedRoute'
+import { RequireAuth, RequireStaff, RequireAdmin } from './components/ProtectedRoute'
 
 import CustomerLayout from './layouts/CustomerLayout'
 import AdminLayout from './layouts/AdminLayout'
@@ -28,7 +28,7 @@ function App() {
     <BrowserRouter>
       <AuthProvider>
         <Routes>
-          {/* Nhóm route phía khách hàng */}
+          {/* Người thuê (customer) + khách chưa đăng nhập */}
           <Route element={<CustomerLayout />}>
             <Route path="/" element={<Home />} />
             <Route path="/products" element={<Products />} />
@@ -37,38 +37,27 @@ function App() {
             <Route path="/cart" element={<Cart />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
-            <Route
-              path="/orders"
-              element={
-                <RequireAuth>
-                  <MyOrders />
-                </RequireAuth>
-              }
-            />
-            <Route
-              path="/profile"
-              element={
-                <RequireAuth>
-                  <Profile />
-                </RequireAuth>
-              }
-            />
+            <Route path="/orders" element={<RequireAuth><MyOrders /></RequireAuth>} />
+            <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
           </Route>
 
-          {/* Nhóm route phía admin - yêu cầu quyền admin/staff */}
+          {/* Khu quản trị: Người cho thuê (staff) + Admin */}
           <Route
             path="/admin"
             element={
-              <RequireAdmin>
+              <RequireStaff>
                 <AdminLayout />
-              </RequireAdmin>
+              </RequireStaff>
             }
           >
+            {/* Staff + Admin */}
             <Route index element={<Dashboard />} />
             <Route path="products" element={<ManageProducts />} />
-            <Route path="categories" element={<ManageCategories />} />
             <Route path="orders" element={<ManageOrders />} />
-            <Route path="users" element={<ManageUsers />} />
+
+            {/* Chỉ Admin */}
+            <Route path="categories" element={<RequireAdmin><ManageCategories /></RequireAdmin>} />
+            <Route path="users" element={<RequireAdmin><ManageUsers /></RequireAdmin>} />
           </Route>
         </Routes>
       </AuthProvider>

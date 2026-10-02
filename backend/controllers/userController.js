@@ -1,12 +1,57 @@
 const pool = require('../config/db')
 const bcrypt = require('bcryptjs')
 
+const VALID_ROLES = ['customer', 'staff', 'admin']
+const VALID_STATUSES = ['active', 'locked']
+
+// ============================================================
+// Admin: quản lý tài khoản - phân quyền
+// ============================================================
 async function getUsers(req, res) {
+  const { role, search } = req.query
+  let sql =
+    'SELECT id, full_name, email, phone, role, status, created_at FROM users WHERE 1=1'
+  const params = []
+
+  if (role && VALID_ROLES.includes(role)) {
+    sql += ' AND role = ?'
+    params.push(role)
+  }
+  if (search) {
+    sql += ' AND (full_name LIKE ? OR email LIKE ?)'
+    params.push(`%${search}%`, `%${search}%`)
+  }
+  sql += ' ORDER BY id DESC'
+
   try {
-    const [rows] = await pool.query(
-      'SELECT id, full_name, email, phone, role, status, created_at FROM users ORDER BY id DESC'
-    )
+    const [rows] = await pool.query(sql, params)
     res.json(rows)
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ message: 'Lỗi server' })
+  }
+}
+
+// Admin phân quyền: customer (Người thuê) / staff (Người cho thuê) / admin
+async function updateUserRole(req, res) {
+  const { role } = req.body
+  if (!VALID_ROLES.includes(role)) {
+    return res.status(400).json({ message: 'Vai trò không hợp lệ' })
+  }
+  // Không cho tự đổi quyền của chính mình (tránh mất hết admin)
+  if (Number(req.params.id) === req.user.id) {
+    return res.status(400).json({ message: 'Không thể tự thay đổi vai trò của chính mình' })
+  }
+
+  try {
+    const [result] = await pool.query('UPDATE users SET role = ? WHERE id = ?', [
+      role,
+      req.params.id,
+    ])
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Không tìm thấy người dùng' })
+    }
+    res.json({ message: 'Cập nhật vai trò thành công' })
   } catch (err) {
     console.error(err)
     res.status(500).json({ message: 'Lỗi server' })
@@ -15,12 +60,21 @@ async function getUsers(req, res) {
 
 async function updateUserStatus(req, res) {
   const { status } = req.body
-  if (!['active', 'locked'].includes(status)) {
+  if (!VALID_STATUSES.includes(status)) {
     return res.status(400).json({ message: 'Trạng thái không hợp lệ' })
+  }
+  if (Number(req.params.id) === req.user.id) {
+    return res.status(400).json({ message: 'Không thể tự khóa tài khoản của chính mình' })
   }
 
   try {
-    await pool.query('UPDATE users SET status = ? WHERE id = ?', [status, req.params.id])
+    const [result] = await pool.query('UPDATE users SET status = ? WHERE id = ?', [
+      status,
+      req.params.id,
+    ])
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Không tìm thấy người dùng' })
+    }
     res.json({ message: 'Cập nhật thành công' })
   } catch (err) {
     console.error(err)
@@ -28,6 +82,9 @@ async function updateUserStatus(req, res) {
   }
 }
 
+// ============================================================
+// Người dùng bất kỳ: quản lý hồ sơ
+// ============================================================
 async function getProfile(req, res) {
   try {
     const [rows] = await pool.query(
@@ -91,6 +148,7 @@ async function changePassword(req, res) {
 
 module.exports = {
   getUsers,
+  updateUserRole,
   updateUserStatus,
   getProfile,
   updateProfile,

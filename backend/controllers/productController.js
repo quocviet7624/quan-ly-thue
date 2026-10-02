@@ -3,18 +3,22 @@ const pool = require('../config/db')
 function parseImages(row) {
   if (!row) return row
   let images = []
-  try {
-    images = row.images ? JSON.parse(row.images) : []
-  } catch {
-    images = []
+  if (Array.isArray(row.images)) {
+    // mysql2 tự động parse sẵn cột kiểu JSON thành mảng JS, không cần JSON.parse lại.
+    images = row.images
+  } else if (typeof row.images === 'string' && row.images) {
+    // Phòng trường hợp driver/cấu hình khác trả về chuỗi thô thay vì đã parse sẵn.
+    try {
+      images = JSON.parse(row.images)
+    } catch {
+      images = []
+    }
   }
   return { ...row, images }
 }
 
 async function getProducts(req, res) {
   const { category_id, search, all } = req.query
-  // "all" = true -> dùng cho trang quản trị (admin), lấy cả sản phẩm discontinued
-  // không có "all" -> dùng cho trang khách hàng, chỉ lấy sản phẩm active
   let sql = all ? 'SELECT * FROM products WHERE 1=1' : 'SELECT * FROM products WHERE status = "active"'
   const params = []
 
@@ -56,6 +60,7 @@ async function createProduct(req, res) {
     brand,
     rental_price_per_day,
     deposit_amount,
+    stock_quantity,
     images, // mảng URL ảnh, ví dụ ['/uploads/products/abc.jpg', ...]
   } = req.body
 
@@ -68,8 +73,9 @@ async function createProduct(req, res) {
 
   try {
     const [result] = await pool.query(
-      `INSERT INTO products (category_id, name, description, image_url, images, brand, rental_price_per_day, deposit_amount)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO products
+        (category_id, name, description, image_url, images, brand, rental_price_per_day, deposit_amount, stock_quantity)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         category_id,
         name,
@@ -79,6 +85,7 @@ async function createProduct(req, res) {
         brand || null,
         rental_price_per_day,
         deposit_amount || 0,
+        stock_quantity ?? 0,
       ]
     )
     res.status(201).json({ id: result.insertId })
@@ -97,6 +104,7 @@ async function updateProduct(req, res) {
     brand,
     rental_price_per_day,
     deposit_amount,
+    stock_quantity,
     status,
     images,
   } = req.body
@@ -107,7 +115,7 @@ async function updateProduct(req, res) {
   try {
     const [result] = await pool.query(
       `UPDATE products SET category_id=?, name=?, description=?, image_url=?, images=?, brand=?,
-       rental_price_per_day=?, deposit_amount=?, status=? WHERE id=?`,
+       rental_price_per_day=?, deposit_amount=?, stock_quantity=?, status=? WHERE id=?`,
       [
         category_id,
         name,
@@ -117,6 +125,7 @@ async function updateProduct(req, res) {
         brand,
         rental_price_per_day,
         deposit_amount,
+        stock_quantity ?? 0,
         status || 'active',
         id,
       ]

@@ -3,10 +3,10 @@ export default function Footer() {
     <footer className="footer-v2">
       <div className="footer-v2-grid">
         <div className="footer-brand">
-          <h3>🏕️ Dã Ngoại Rental</h3>
+          <h3>📦 Đa Năng Rental</h3>
           <p className="footer-quote">
-            "Không chỉ là nơi cho thuê thiết bị, mà còn là người bạn đồng hành trên mỗi chuyến đi.
-            Đa dạng sản phẩm, giá cả hợp lý, giúp bạn sẵn sàng cho mọi hành trình."
+            "Không chỉ là nơi cho thuê thiết bị, mà còn là người bạn đồng hành cho mọi nhu cầu.
+            Đa dạng sản phẩm, giá cả hợp lý, giúp bạn có đúng thứ mình cần đúng lúc cần."
           </p>
         </div>
 
@@ -28,8 +28,8 @@ export default function Footer() {
 
       <div className="footer-bottom">
         <p>
-          © {new Date().getFullYear()} Dã Ngoại Rental — Đồ án hệ thống quản lý cho thuê thiết bị,
-          phụ kiện dã ngoại.
+          © {new Date().getFullYear()} Đa Năng Rental — Đồ án hệ thống quản lý cho thuê thiết bị,
+          phụ kiện đa năng.
         </p>
       </div>
     </footer>
